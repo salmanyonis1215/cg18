@@ -13,6 +13,7 @@ import CustomersPage from "@/pages/CustomersPage";
 import DeliveriesPage from "@/pages/DeliveriesPage";
 import FarmersPage from "@/pages/FarmersPage";
 import ProductsPage from "@/pages/ProductsPage";
+import ReportsPage from "@/pages/ReportsPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
