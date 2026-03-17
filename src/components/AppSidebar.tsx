@@ -1,5 +1,5 @@
 import {
-  Truck, ShoppingCart, CreditCard, Users, Sprout, Package, LayoutDashboard, LogOut,
+  Truck, ShoppingCart, CreditCard, Users, Sprout, Package, LayoutDashboard, LogOut, FileBarChart,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
