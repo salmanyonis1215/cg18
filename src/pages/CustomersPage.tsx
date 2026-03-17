@@ -11,16 +11,22 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
-function DebtBadge({ balance }: { balance: number }) {
+function DebtBadge({ balance, creditLimit }: { balance: number; creditLimit: number | null }) {
+  const overLimit = creditLimit != null && balance >= creditLimit;
   const isHigh = balance > 5000;
   return (
-    <span className={`px-2 py-1 rounded text-xs font-bold font-mono ${
-      isHigh
-        ? "bg-warning/10 text-warning border border-warning/20"
-        : "bg-muted text-muted-foreground border border-border"
-    }`}>
-      ${balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-    </span>
+    <div className="flex flex-col items-end gap-0.5">
+      <span className={`px-2 py-1 rounded text-xs font-bold font-mono ${
+        overLimit
+          ? "bg-destructive/10 text-destructive border border-destructive/20"
+          : isHigh
+          ? "bg-warning/10 text-warning border border-warning/20"
+          : "bg-muted text-muted-foreground border border-border"
+      }`}>
+        ${balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+      </span>
+      {overLimit && <span className="text-[10px] text-destructive font-medium">OVER LIMIT</span>}
+    </div>
   );
 }
 
@@ -30,24 +36,33 @@ export default function CustomersPage() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [location, setLocation] = useState("");
+  const [creditLimit, setCreditLimit] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.from("customers").insert({ name, phone: phone || null });
+    const { error } = await supabase.from("customers").insert({
+      name,
+      phone: phone || null,
+      location: location || null,
+      credit_limit: creditLimit ? parseFloat(creditLimit) : null,
+    });
     setLoading(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Customer added.");
     queryClient.invalidateQueries({ queryKey: ["customers"] });
     setOpen(false);
-    setName(""); setPhone("");
+    setName(""); setPhone(""); setLocation(""); setCreditLimit("");
   };
 
   const columns = [
     { header: "Name", accessor: "name" as const },
     { header: "Phone", accessor: "phone" as const },
-    { header: "Balance", accessor: (r: any) => <DebtBadge balance={r.balance || 0} />, className: "text-right" },
+    { header: "Location", accessor: "location" as const },
+    { header: "Credit Limit", accessor: (r: any) => r.credit_limit != null ? `$${Number(r.credit_limit).toFixed(2)}` : "—", className: "font-mono text-right" },
+    { header: "Balance", accessor: (r: any) => <DebtBadge balance={r.balance || 0} creditLimit={r.credit_limit} />, className: "text-right" },
   ];
 
   return (
@@ -67,6 +82,14 @@ export default function CustomersPage() {
               <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">Phone (optional)</Label>
                 <Input value={phone} onChange={e => setPhone(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Location (optional)</Label>
+                <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Bakara Market" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Credit Limit ($) — leave empty for unlimited</Label>
+                <Input type="number" step="0.01" value={creditLimit} onChange={e => setCreditLimit(e.target.value)} placeholder="e.g. 500" />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Adding..." : "Add Customer"}

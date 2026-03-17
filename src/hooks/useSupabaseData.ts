@@ -86,3 +86,17 @@ export function useProfiles() {
     },
   });
 }
+
+export function useExpenses() {
+  return useQuery({
+    queryKey: ["expenses"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("expenses")
+        .select("*")
+        .order("date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+}

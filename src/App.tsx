@@ -14,6 +14,7 @@ import DeliveriesPage from "@/pages/DeliveriesPage";
 import FarmersPage from "@/pages/FarmersPage";
 import ProductsPage from "@/pages/ProductsPage";
 import ReportsPage from "@/pages/ReportsPage";
+import ExpensesPage from "@/pages/ExpensesPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ function AppRoutes() {
       <Route path="/deliveries" element={<ProtectedRoute adminOnly><DeliveriesPage /></ProtectedRoute>} />
       <Route path="/farmers" element={<ProtectedRoute adminOnly><FarmersPage /></ProtectedRoute>} />
       <Route path="/products" element={<ProtectedRoute adminOnly><ProductsPage /></ProtectedRoute>} />
+      <Route path="/expenses" element={<ProtectedRoute adminOnly><ExpensesPage /></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute adminOnly><ReportsPage /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
