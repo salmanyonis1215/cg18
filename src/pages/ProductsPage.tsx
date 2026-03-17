@@ -11,29 +11,45 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
+function StockBadge({ stock, unit }: { stock: number; unit: string }) {
+  const isLow = stock <= 10;
+  const isEmpty = stock <= 0;
+  return (
+    <span className={`px-2 py-1 rounded text-xs font-bold font-mono ${
+      isEmpty ? "bg-destructive/10 text-destructive border border-destructive/20"
+      : isLow ? "bg-warning/10 text-warning border border-warning/20"
+      : "bg-success/10 text-success border border-success/20"
+    }`}>
+      {stock} {unit}
+    </span>
+  );
+}
+
 export default function ProductsPage() {
   const queryClient = useQueryClient();
   const { data: products = [] } = useProducts();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [unit, setUnit] = useState("kg");
+  const [stock, setStock] = useState("0");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.from("products").insert({ name, unit });
+    const { error } = await supabase.from("products").insert({ name, unit, stock: parseFloat(stock) });
     setLoading(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Product added.");
     queryClient.invalidateQueries({ queryKey: ["products"] });
     setOpen(false);
-    setName(""); setUnit("kg");
+    setName(""); setUnit("kg"); setStock("0");
   };
 
   const columns = [
     { header: "Name", accessor: "name" as const },
     { header: "Unit", accessor: "unit" as const },
+    { header: "Stock", accessor: (r: any) => <StockBadge stock={r.stock ?? 0} unit={r.unit || "kg"} />, className: "text-right" },
   ];
 
   return (
@@ -50,9 +66,15 @@ export default function ProductsPage() {
                 <Label className="text-xs text-muted-foreground">Product Name</Label>
                 <Input value={name} onChange={e => setName(e.target.value)} required />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Unit</Label>
-                <Input value={unit} onChange={e => setUnit(e.target.value)} placeholder="kg" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Unit</Label>
+                  <Input value={unit} onChange={e => setUnit(e.target.value)} placeholder="kg" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Initial Stock</Label>
+                  <Input type="number" step="0.01" value={stock} onChange={e => setStock(e.target.value)} />
+                </div>
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Adding..." : "Add Product"}

@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Printer, FileText } from "lucide-react";
+import { CalendarIcon, Printer, FileText, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useSales, usePayments, useCustomers, useFarmers, useDeliveries, useProfiles } from "@/hooks/useSupabaseData";
+import { useSales, usePayments, useCustomers, useFarmers, useDeliveries, useProfiles, useExpenses } from "@/hooks/useSupabaseData";
+import { DateReportSection } from "@/components/reports/DateReportSection";
+import { CustomerReportSection } from "@/components/reports/CustomerReportSection";
+import { FarmerReportSection } from "@/components/reports/FarmerReportSection";
+import { SalesmanReportSection } from "@/components/reports/SalesmanReportSection";
 
 type ReportType = "date" | "customer" | "farmer" | "salesman";
 
@@ -28,10 +31,7 @@ export default function ReportsPage() {
   const { data: farmers = [] } = useFarmers();
   const { data: deliveries = [] } = useDeliveries();
   const { data: profiles = [] } = useProfiles();
-
-  const handleGenerate = () => {
-    setGenerated(true);
-  };
+  const { data: expenses = [] } = useExpenses();
 
   const handlePrint = () => {
     const content = printRef.current;
@@ -60,7 +60,28 @@ export default function ReportsPage() {
     printWindow.print();
   };
 
-  // Filter logic
+  const handleExportCSV = () => {
+    const content = printRef.current;
+    if (!content) return;
+    const tables = content.querySelectorAll("table");
+    let csv = "";
+    tables.forEach(table => {
+      const rows = table.querySelectorAll("tr");
+      rows.forEach(row => {
+        const cells = row.querySelectorAll("th, td");
+        csv += Array.from(cells).map(c => `"${c.textContent?.replace(/"/g, '""') || ""}"`).join(",") + "\n";
+      });
+      csv += "\n";
+    });
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `report-${reportType}-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const filterByDate = <T extends { date?: string | null }>(items: T[]) => {
     return items.filter(item => {
       if (!item.date) return false;
@@ -74,175 +95,38 @@ export default function ReportsPage() {
   const filteredSales = filterByDate(sales);
   const filteredPayments = filterByDate(payments);
   const filteredDeliveries = filterByDate(deliveries);
-
-  const fmt = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
-
-  const renderDateReport = () => {
-    const totalSales = filteredSales.reduce((s, r) => s + (r.total_price || 0), 0);
-    const totalPayments = filteredPayments.reduce((s, r) => s + r.amount, 0);
-    const totalTransport = filteredDeliveries.reduce((s, r) => s + (r.total_transport_cost || 0), 0);
-    const commission = totalSales * 0.1;
-
-    return (
-      <div>
-        <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Date Range Report</h2>
-        <p className="meta" style={{ color: "#666", fontSize: 12 }}>
-          {dateFrom ? format(dateFrom, "PPP") : "All time"} — {dateTo ? format(dateTo, "PPP") : "Present"}
-        </p>
-        <div style={{ display: "flex", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
-          {[
-            { label: "Total Sales", value: fmt(totalSales) },
-            { label: "Total Payments", value: fmt(totalPayments) },
-            { label: "Commission (10%)", value: fmt(commission) },
-            { label: "Transport Costs", value: fmt(totalTransport) },
-          ].map(s => (
-            <div key={s.label} style={{ padding: "12px 16px", background: "#f9f9f9", borderRadius: 6, minWidth: 140 }}>
-              <div style={{ fontSize: 11, textTransform: "uppercase", color: "#666" }}>{s.label}</div>
-              <div style={{ fontSize: 18, fontWeight: 700, marginTop: 4, fontFamily: "monospace" }}>{s.value}</div>
-            </div>
-          ))}
-        </div>
-        <h2 style={{ fontSize: 14, fontWeight: 600, marginTop: 16 }}>Sales ({filteredSales.length})</h2>
-        <table><thead><tr><th>Date</th><th>Customer</th><th>Product</th><th>Qty</th><th>Price/Unit</th><th>Total</th><th>Salesman</th></tr></thead>
-        <tbody>{filteredSales.map(s => (
-          <tr key={s.id}><td>{s.date}</td><td>{(s as any).customers?.name}</td><td>{(s as any).products?.name}</td>
-          <td className="mono">{s.quantity}</td><td className="mono">{fmt(s.price_per_unit)}</td>
-          <td className="mono">{fmt(s.total_price || 0)}</td><td>{(s as any).profiles?.name}</td></tr>
-        ))}</tbody></table>
-        <h2 style={{ fontSize: 14, fontWeight: 600, marginTop: 16 }}>Payments ({filteredPayments.length})</h2>
-        <table><thead><tr><th>Date</th><th>Customer</th><th>Amount</th><th>Collected By</th></tr></thead>
-        <tbody>{filteredPayments.map(p => (
-          <tr key={p.id}><td>{p.date}</td><td>{(p as any).customers?.name}</td>
-          <td className="mono">{fmt(p.amount)}</td><td>{(p as any).profiles?.name}</td></tr>
-        ))}</tbody></table>
-        <h2 style={{ fontSize: 14, fontWeight: 600, marginTop: 16 }}>Deliveries ({filteredDeliveries.length})</h2>
-        <table><thead><tr><th>Date</th><th>Farmer</th><th>Product</th><th>Qty</th><th>Transport</th><th>Driver</th></tr></thead>
-        <tbody>{filteredDeliveries.map(d => (
-          <tr key={d.id}><td>{d.date}</td><td>{(d as any).farmers?.name}</td><td>{(d as any).products?.name}</td>
-          <td className="mono">{d.quantity}</td><td className="mono">{fmt(d.total_transport_cost || 0)}</td><td>{d.driver_name}</td></tr>
-        ))}</tbody></table>
-      </div>
-    );
-  };
-
-  const renderCustomerReport = () => {
-    const customer = customers.find(c => c.id === selectedId);
-    if (!customer) return <p>Select a customer.</p>;
-    const custSales = filteredSales.filter(s => s.customer_id === selectedId);
-    const custPayments = filteredPayments.filter(p => p.customer_id === selectedId);
-    const totalSold = custSales.reduce((s, r) => s + (r.total_price || 0), 0);
-    const totalPaid = custPayments.reduce((s, r) => s + r.amount, 0);
-
-    return (
-      <div>
-        <h2 style={{ fontSize: 16, fontWeight: 600 }}>Customer Report: {customer.name}</h2>
-        <p className="meta" style={{ color: "#666", fontSize: 12 }}>Phone: {customer.phone || "N/A"} | Balance: {fmt(customer.balance || 0)}</p>
-        <div style={{ display: "flex", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
-          {[{ label: "Total Purchases", value: fmt(totalSold) }, { label: "Total Payments", value: fmt(totalPaid) }, { label: "Current Balance", value: fmt(customer.balance || 0) }].map(s => (
-            <div key={s.label} style={{ padding: "12px 16px", background: "#f9f9f9", borderRadius: 6, minWidth: 140 }}>
-              <div style={{ fontSize: 11, textTransform: "uppercase", color: "#666" }}>{s.label}</div>
-              <div style={{ fontSize: 18, fontWeight: 700, marginTop: 4, fontFamily: "monospace" }}>{s.value}</div>
-            </div>
-          ))}
-        </div>
-        <h2 style={{ fontSize: 14, fontWeight: 600, marginTop: 16 }}>Purchases ({custSales.length})</h2>
-        <table><thead><tr><th>Date</th><th>Product</th><th>Qty</th><th>Price/Unit</th><th>Total</th></tr></thead>
-        <tbody>{custSales.map(s => (
-          <tr key={s.id}><td>{s.date}</td><td>{(s as any).products?.name}</td><td className="mono">{s.quantity}</td>
-          <td className="mono">{fmt(s.price_per_unit)}</td><td className="mono">{fmt(s.total_price || 0)}</td></tr>
-        ))}</tbody></table>
-        <h2 style={{ fontSize: 14, fontWeight: 600, marginTop: 16 }}>Payments ({custPayments.length})</h2>
-        <table><thead><tr><th>Date</th><th>Amount</th><th>Collected By</th></tr></thead>
-        <tbody>{custPayments.map(p => (
-          <tr key={p.id}><td>{p.date}</td><td className="mono">{fmt(p.amount)}</td><td>{(p as any).profiles?.name}</td></tr>
-        ))}</tbody></table>
-      </div>
-    );
-  };
-
-  const renderFarmerReport = () => {
-    const farmer = farmers.find(f => f.id === selectedId);
-    if (!farmer) return <p>Select a farmer.</p>;
-    const farmerDeliveries = filteredDeliveries.filter(d => d.farmer_id === selectedId);
-    const totalQty = farmerDeliveries.reduce((s, d) => s + d.quantity, 0);
-    const totalTransport = farmerDeliveries.reduce((s, d) => s + (d.total_transport_cost || 0), 0);
-
-    return (
-      <div>
-        <h2 style={{ fontSize: 16, fontWeight: 600 }}>Farmer Report: {farmer.name}</h2>
-        <div style={{ display: "flex", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
-          {[{ label: "Total Deliveries", value: String(farmerDeliveries.length) }, { label: "Total Quantity", value: String(totalQty) }, { label: "Transport Costs", value: fmt(totalTransport) }].map(s => (
-            <div key={s.label} style={{ padding: "12px 16px", background: "#f9f9f9", borderRadius: 6, minWidth: 140 }}>
-              <div style={{ fontSize: 11, textTransform: "uppercase", color: "#666" }}>{s.label}</div>
-              <div style={{ fontSize: 18, fontWeight: 700, marginTop: 4, fontFamily: "monospace" }}>{s.value}</div>
-            </div>
-          ))}
-        </div>
-        <h2 style={{ fontSize: 14, fontWeight: 600, marginTop: 16 }}>Deliveries ({farmerDeliveries.length})</h2>
-        <table><thead><tr><th>Date</th><th>Product</th><th>Qty</th><th>Transport/Unit</th><th>Total Transport</th><th>Driver</th></tr></thead>
-        <tbody>{farmerDeliveries.map(d => (
-          <tr key={d.id}><td>{d.date}</td><td>{(d as any).products?.name}</td><td className="mono">{d.quantity}</td>
-          <td className="mono">{fmt(d.transport_cost_per_unit || 0)}</td><td className="mono">{fmt(d.total_transport_cost || 0)}</td><td>{d.driver_name}</td></tr>
-        ))}</tbody></table>
-      </div>
-    );
-  };
-
-  const renderSalesmanReport = () => {
-    const salesman = profiles.find(p => p.id === selectedId);
-    if (!salesman) return <p>Select a salesman.</p>;
-    const smSales = filteredSales.filter(s => s.salesman_id === selectedId);
-    const smPayments = filteredPayments.filter(p => p.salesman_id === selectedId);
-    const totalSold = smSales.reduce((s, r) => s + (r.total_price || 0), 0);
-    const totalCollected = smPayments.reduce((s, r) => s + r.amount, 0);
-    const commission = totalSold * 0.1;
-
-    return (
-      <div>
-        <h2 style={{ fontSize: 16, fontWeight: 600 }}>Salesman Report: {salesman.name}</h2>
-        <div style={{ display: "flex", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
-          {[{ label: "Total Sales", value: fmt(totalSold) }, { label: "Collections", value: fmt(totalCollected) }, { label: "Commission (10%)", value: fmt(commission) }].map(s => (
-            <div key={s.label} style={{ padding: "12px 16px", background: "#f9f9f9", borderRadius: 6, minWidth: 140 }}>
-              <div style={{ fontSize: 11, textTransform: "uppercase", color: "#666" }}>{s.label}</div>
-              <div style={{ fontSize: 18, fontWeight: 700, marginTop: 4, fontFamily: "monospace" }}>{s.value}</div>
-            </div>
-          ))}
-        </div>
-        <h2 style={{ fontSize: 14, fontWeight: 600, marginTop: 16 }}>Sales ({smSales.length})</h2>
-        <table><thead><tr><th>Date</th><th>Customer</th><th>Product</th><th>Qty</th><th>Total</th></tr></thead>
-        <tbody>{smSales.map(s => (
-          <tr key={s.id}><td>{s.date}</td><td>{(s as any).customers?.name}</td><td>{(s as any).products?.name}</td>
-          <td className="mono">{s.quantity}</td><td className="mono">{fmt(s.total_price || 0)}</td></tr>
-        ))}</tbody></table>
-        <h2 style={{ fontSize: 14, fontWeight: 600, marginTop: 16 }}>Payments Collected ({smPayments.length})</h2>
-        <table><thead><tr><th>Date</th><th>Customer</th><th>Amount</th></tr></thead>
-        <tbody>{smPayments.map(p => (
-          <tr key={p.id}><td>{p.date}</td><td>{(p as any).customers?.name}</td><td className="mono">{fmt(p.amount)}</td></tr>
-        ))}</tbody></table>
-      </div>
-    );
-  };
-
-  const renderReport = () => {
-    switch (reportType) {
-      case "date": return renderDateReport();
-      case "customer": return renderCustomerReport();
-      case "farmer": return renderFarmerReport();
-      case "salesman": return renderSalesmanReport();
-    }
-  };
+  const filteredExpenses = filterByDate(expenses);
 
   const needsSelection = reportType !== "date";
   const selectionOptions = reportType === "customer" ? customers : reportType === "farmer" ? farmers : profiles;
   const selectionLabel = reportType === "customer" ? "Customer" : reportType === "farmer" ? "Farmer" : "Salesman";
 
+  const renderReport = () => {
+    const fmt = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+    switch (reportType) {
+      case "date":
+        return <DateReportSection sales={filteredSales} payments={filteredPayments} deliveries={filteredDeliveries} expenses={filteredExpenses} dateFrom={dateFrom} dateTo={dateTo} fmt={fmt} />;
+      case "customer":
+        return <CustomerReportSection customer={customers.find(c => c.id === selectedId)} sales={filteredSales} payments={filteredPayments} selectedId={selectedId} fmt={fmt} />;
+      case "farmer":
+        return <FarmerReportSection farmer={farmers.find(f => f.id === selectedId)} deliveries={filteredDeliveries} selectedId={selectedId} fmt={fmt} />;
+      case "salesman":
+        return <SalesmanReportSection salesman={profiles.find(p => p.id === selectedId)} sales={filteredSales} payments={filteredPayments} selectedId={selectedId} fmt={fmt} />;
+    }
+  };
+
   return (
     <div>
       <PageHeader title="Reports">
         {generated && (
-          <Button size="sm" variant="outline" onClick={handlePrint}>
-            <Printer className="h-4 w-4 mr-1" /> Print Report
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={handleExportCSV}>
+              <Download className="h-4 w-4 mr-1" /> Export CSV
+            </Button>
+            <Button size="sm" variant="outline" onClick={handlePrint}>
+              <Printer className="h-4 w-4 mr-1" /> Print
+            </Button>
+          </div>
         )}
       </PageHeader>
 
@@ -309,7 +193,7 @@ export default function ReportsPage() {
           </div>
 
           <div className="mt-4">
-            <Button onClick={handleGenerate} disabled={needsSelection && !selectedId}>
+            <Button onClick={() => setGenerated(true)} disabled={needsSelection && !selectedId}>
               <FileText className="h-4 w-4 mr-1" /> Generate Report
             </Button>
           </div>
