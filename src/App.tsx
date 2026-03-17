@@ -14,6 +14,7 @@ import DeliveriesPage from "@/pages/DeliveriesPage";
 import FarmersPage from "@/pages/FarmersPage";
 import ProductsPage from "@/pages/ProductsPage";
 import ReportsPage from "@/pages/ReportsPage";
+import ExpensesPage from "@/pages/ExpensesPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
