@@ -18,21 +18,27 @@ export type Database = {
         Row: {
           balance: number | null
           created_at: string | null
+          credit_limit: number | null
           id: string
+          location: string | null
           name: string
           phone: string | null
         }
         Insert: {
           balance?: number | null
           created_at?: string | null
+          credit_limit?: number | null
           id?: string
+          location?: string | null
           name: string
           phone?: string | null
         }
         Update: {
           balance?: number | null
           created_at?: string | null
+          credit_limit?: number | null
           id?: string
+          location?: string | null
           name?: string
           phone?: string | null
         }
@@ -88,6 +94,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          created_by: string | null
+          date: string | null
+          description: string | null
+          id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string | null
+          created_by?: string | null
+          date?: string | null
+          description?: string | null
+          id?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          created_by?: string | null
+          date?: string | null
+          description?: string | null
+          id?: string
+        }
+        Relationships: []
       }
       farmers: {
         Row: {
@@ -154,18 +190,21 @@ export type Database = {
           created_at: string | null
           id: string
           name: string
+          stock: number | null
           unit: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           name: string
+          stock?: number | null
           unit?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
           name?: string
+          stock?: number | null
           unit?: string | null
         }
         Relationships: []
