@@ -1,5 +1,5 @@
 import {
-  Truck, ShoppingCart, CreditCard, Users, Sprout, Package, LayoutDashboard, LogOut,
+  Truck, ShoppingCart, CreditCard, Users, Sprout, Package, LayoutDashboard, LogOut, FileBarChart,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -18,6 +18,7 @@ const adminItems = [
   { title: "Customers", url: "/customers", icon: Users },
   { title: "Farmers", url: "/farmers", icon: Sprout },
   { title: "Products", url: "/products", icon: Package },
+  { title: "Reports", url: "/reports", icon: FileBarChart },
 ];
 
 const salesmanItems = [
