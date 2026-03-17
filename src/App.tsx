@@ -42,6 +42,7 @@ function AppRoutes() {
       <Route path="/deliveries" element={<ProtectedRoute adminOnly><DeliveriesPage /></ProtectedRoute>} />
       <Route path="/farmers" element={<ProtectedRoute adminOnly><FarmersPage /></ProtectedRoute>} />
       <Route path="/products" element={<ProtectedRoute adminOnly><ProductsPage /></ProtectedRoute>} />
+      <Route path="/expenses" element={<ProtectedRoute adminOnly><ExpensesPage /></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute adminOnly><ReportsPage /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
