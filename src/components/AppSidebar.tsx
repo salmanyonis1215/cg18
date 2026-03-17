@@ -18,6 +18,7 @@ const adminItems = [
   { title: "Customers", url: "/customers", icon: Users },
   { title: "Farmers", url: "/farmers", icon: Sprout },
   { title: "Products", url: "/products", icon: Package },
+  { title: "Reports", url: "/reports", icon: FileBarChart },
 ];
 
 const salesmanItems = [
