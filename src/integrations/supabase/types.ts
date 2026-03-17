@@ -14,16 +14,271 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      customers: {
+        Row: {
+          balance: number | null
+          created_at: string | null
+          id: string
+          name: string
+          phone: string | null
+        }
+        Insert: {
+          balance?: number | null
+          created_at?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+        }
+        Update: {
+          balance?: number | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
+      deliveries: {
+        Row: {
+          created_at: string | null
+          date: string | null
+          driver_name: string
+          farmer_id: string
+          id: string
+          product_id: string
+          quantity: number
+          total_transport_cost: number | null
+          transport_cost_per_unit: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string | null
+          driver_name: string
+          farmer_id: string
+          id?: string
+          product_id: string
+          quantity: number
+          total_transport_cost?: number | null
+          transport_cost_per_unit?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string | null
+          driver_name?: string
+          farmer_id?: string
+          id?: string
+          product_id?: string
+          quantity?: number
+          total_transport_cost?: number | null
+          transport_cost_per_unit?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deliveries_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: false
+            referencedRelation: "farmers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deliveries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      farmers: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          customer_id: string
+          date: string | null
+          id: string
+          salesman_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          customer_id: string
+          date?: string | null
+          id?: string
+          salesman_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          customer_id?: string
+          date?: string | null
+          id?: string
+          salesman_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_salesman_id_fkey"
+            columns: ["salesman_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          unit: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          unit?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          unit?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      sales: {
+        Row: {
+          created_at: string | null
+          customer_id: string
+          date: string | null
+          id: string
+          price_per_unit: number
+          product_id: string
+          quantity: number
+          salesman_id: string
+          total_price: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id: string
+          date?: string | null
+          id?: string
+          price_per_unit: number
+          product_id: string
+          quantity: number
+          salesman_id: string
+          total_price?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string
+          date?: string | null
+          id?: string
+          price_per_unit?: number
+          product_id?: string
+          quantity?: number
+          salesman_id?: string
+          total_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_salesman_id_fkey"
+            columns: ["salesman_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "salesman"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +405,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "salesman"],
+    },
   },
 } as const
